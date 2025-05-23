@@ -144,8 +144,7 @@ class Options:
         """
         Reads a request from file and parses it to be used when sending requests.
         """
-        # TODO: open in bytes mode, need to change other stuff to make this work though
-        with open(self.args.request, "r") as f:
+        with open(self.args.request, "rb") as f:
             data = f.read()
         scheme="http"
         if self.args.https or (self.args.url and self.args.url.startswith("https")):
