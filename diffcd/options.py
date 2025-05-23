@@ -52,7 +52,7 @@ class Options:
         elif self.args.verbose:
             log_level = VERBOSE_LEVEL
         self.logger.setLevel(log_level)
-        console_handler = logging.StreamHandler()
+        console_handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter('[%(levelname)s] %(message)s')
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
