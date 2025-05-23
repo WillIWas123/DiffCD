@@ -26,47 +26,47 @@ DiffCD uses [HTTPDiff](https://github.com/WillIWas123/HTTPDiff) to determine the
 ## Help
 
 ```
-usage: diffcd [-h] [-e EXTENSIONS [EXTENSIONS ...]] -w WORDLIST [--original-target ORIGINAL_TARGET] (-u URL | -r REQUEST)
-              [-t THREADS] [-p PROXY] [-m METHOD] [--header HEADER [HEADER ...]] [-b BODY] [--https] [--verify] [-ar] [-v]
-              [-d] [-s SLEEP] [-cs CALIBRATION_SLEEP] [--timeout TIMEOUT] [-ie] [--no-analyze-all]
-              [--num-calibrations NUM_CALIBRATIONS] [--num-verifications NUM_VERIFICATIONS]
+usage: diffcd [-h] --wordlist WORDLIST [--extensions EXTENSIONS [EXTENSIONS ...]] (--url URL | --request REQUEST)
+              [--method METHOD] [--header HEADER [HEADER ...]] [--body BODY] [--threads THREADS] [--proxy PROXY] [--https]
+              [--verify] [--allow-redirects] [--verbose] [--debug] [--sleep SLEEP] [--calibration-sleep CALIBRATION_SLEEP]
+              [--timeout TIMEOUT] [--ignore-errors] [--no-analyze-all] [--num-calibrations NUM_CALIBRATIONS]
+              [--num-verifications NUM_VERIFICATIONS]
 
 A Content Discovery tool for finding more interesting/hidden content on web applications
 
 options:
   -h, --help            show this help message and exit
-  -e EXTENSIONS [EXTENSIONS ...], --extensions EXTENSIONS [EXTENSIONS ...]
-  -w WORDLIST, --wordlist WORDLIST
+  --wordlist WORDLIST, -w WORDLIST
                         Specify wordlist to scan for filenames (extensions will be appended to all filenames)
-  --original-target ORIGINAL_TARGET
+  --extensions EXTENSIONS [EXTENSIONS ...], -e EXTENSIONS [EXTENSIONS ...]
 
 target:
-  -u URL, --url URL
-  -r REQUEST, --request REQUEST, --req REQUEST
+  --url URL, -u URL
+  --request REQUEST, --req REQUEST, -r REQUEST
                         Specify a file containing a raw request for scanning
 
 request:
-  -t THREADS, --threads THREADS
-  -p PROXY, --proxy PROXY
-  -m METHOD, --method METHOD
+  --method METHOD, -m METHOD
   --header HEADER [HEADER ...]
-  -b BODY, --body BODY  Specify content to be in the body of the request
+  --body BODY, -b BODY  Specify content to be in the body of the request
+  --threads THREADS, -t THREADS
+  --proxy PROXY, -p PROXY
   --https, --tls
   --verify              Verify SSL certificates
-  -ar, --allow-redirects
+  --allow-redirects, -ar
                         Specify if requests should follow redirects
 
 verbosisty:
-  -v, --verbose
-  -d, --debug
+  --verbose, -v
+  --debug, -d
 
 scan:
-  -s SLEEP, -ss SLEEP, --sleep SLEEP
+  --sleep SLEEP, -ss SLEEP, -s SLEEP
                         Determines how long (ms) the scanner should sleep between each request during scan
-  -cs CALIBRATION_SLEEP, --calibration-sleep CALIBRATION_SLEEP
+  --calibration-sleep CALIBRATION_SLEEP, -cs CALIBRATION_SLEEP
                         Determines how long (ms) the scanner should sleep between each request while calibrating
   --timeout TIMEOUT     Determines the timeout duration (s) for each request
-  -ie, --ignore-errors  Ignore errors if any errors occurs during calibration
+  --ignore-errors, -ie  Ignore errors if any errors occurs during calibration
 
 analyzer:
   --no-analyze-all      Make analyzer skip analyzing the body if the content length is static

@@ -63,61 +63,62 @@ class Options:
             description="A Content Discovery tool for finding more interesting/hidden content on web applications",
         )
         parser.add_argument(
-            "-e",
-            "--extensions",
-            default=[""],
-            nargs="+",
-        )
-        parser.add_argument(
-            "-w",
             "--wordlist",
+            "-w",
             required=True,
             help="Specify wordlist to scan for filenames (extensions will be appended to all filenames)",
         )
 
+        parser.add_argument(
+            "--extensions",
+            "-e",
+            default=[""],
+            nargs="+",
+        )
+
         target_parser = parser.add_argument_group("target")
         target_parser_2 = target_parser.add_mutually_exclusive_group(required=True)
-        target_parser_2.add_argument("-u", "--url")
-        target_parser_2.add_argument("-r", "--request", "--req", help="Specify a file containing a raw request for scanning")
+        target_parser_2.add_argument("--url", "-u")
+        target_parser_2.add_argument("--request", "--req", "-r", help="Specify a file containing a raw request for scanning")
 
         request_parser = parser.add_argument_group("request")
-        request_parser.add_argument("-t", "--threads", default=10, type=int)
-        request_parser.add_argument("-p", "--proxy")
-        request_parser.add_argument("-m", "--method", default="GET")
+        request_parser.add_argument("--method", "-m", default="GET")
         request_parser.add_argument("--header", nargs="+", action=ParseHeaders, default={})
-        request_parser.add_argument("-b", "--body", default="", help="Specify content to be in the body of the request")
+        request_parser.add_argument("--body", "-b", default="", help="Specify content to be in the body of the request")
+        request_parser.add_argument("--threads", "-t", default=10, type=int)
+        request_parser.add_argument("--proxy", "-p")
         request_parser.add_argument("--https", "--tls", action="store_true", default=False)
         request_parser.add_argument("--verify", default=False, action="store_true", help="Verify SSL certificates")
         request_parser.add_argument(
-            "-ar", "--allow-redirects", default=False, action="store_true", help="Specify if requests should follow redirects"
+            "--allow-redirects", "-ar", default=False, action="store_true", help="Specify if requests should follow redirects"
         )
         # Waiting for urllib3 to release http 2 support
         # request_parser.add_argument("--version", default="HTTP/2")
 
         verbosity_parser = parser.add_argument_group("verbosisty")
-        verbosity_parser.add_argument("-v", "--verbose", action="store_true", default=False)
-        verbosity_parser.add_argument("-d", "--debug", action="store_true", default=False)
+        verbosity_parser.add_argument("--verbose", "-v", action="store_true", default=False)
+        verbosity_parser.add_argument("--debug", "-d", action="store_true", default=False)
 
         scan_parser = parser.add_argument_group("scan")
         scan_parser.add_argument(
-            "-s",
-            "-ss",
             "--sleep",
+            "-ss",
+            "-s",
             default=0,
             type=int,
             help="Determines how long (ms) the scanner should sleep between each request during scan",
         )
         scan_parser.add_argument(
-            "-cs",
             "--calibration-sleep",
+            "-cs",
             default=0,
             type=int,
             help="Determines how long (ms) the scanner should sleep between each request while calibrating",
         )
         scan_parser.add_argument("--timeout", type=int, default=8, help="Determines the timeout duration (s) for each request")
         scan_parser.add_argument(
-            "-ie",
             "--ignore-errors",
+            "-ie",
             default=False,
             action="store_true",
             help="Ignore errors if any errors occurs during calibration",
