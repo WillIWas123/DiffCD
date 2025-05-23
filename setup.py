@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as f:
     LONG_DESCRIPTION = f.read()
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 DESCRIPTION = " Content Discovery tool using response diffing for finding more interesting/hidden content on web applications."
 
 setup(

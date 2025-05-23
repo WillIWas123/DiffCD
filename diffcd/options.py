@@ -75,7 +75,6 @@ class Options:
             help="Specify wordlist to scan for filenames (extensions will be appended to all filenames)",
         )
 
-        parser.add_argument("--original-target",default="")
         target_parser = parser.add_argument_group("target")
         target_parser_2 = target_parser.add_mutually_exclusive_group(required=True)
         target_parser_2.add_argument("-u", "--url")

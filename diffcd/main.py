@@ -154,7 +154,6 @@ class DiffCD:
                     self.options.logger.critical(f"All of the last 100 payloads gave a valid result, something is wrong, stopping the scan")
                     self.job_lock.release()
                     return
-                host = self.options.args.original_target or self.options.req.host
                 sections_diffs_len = {}
                 for i in sections:
                     if i["section"] not in sections_diffs_len.keys():
