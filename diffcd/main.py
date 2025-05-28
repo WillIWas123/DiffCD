@@ -44,6 +44,7 @@ class DiffCD:
                 return
             if error:
                 self.options.logger.debug(f"Error occured while sending request: {error}")
+                error = str(type(error)).encode()
             resp = Response(resp)
             baseline.add_response(resp,response_time,error,payload=random_value)
 
@@ -52,6 +53,7 @@ class DiffCD:
         resp, response_time,error = self.options.req.send(debug=self.options.args.debug,insertions=[insertion],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
         if error:
             self.options.logger.debug(f"Error occured while sending request: {error}")
+            error = str(type(error)).encode()
         resp = Response(resp)
         baseline.add_response(resp,response_time,error,payload=random_value)
         self.options.logger.verbose(f"Done calibrating for key '{key}'")
@@ -89,16 +91,15 @@ class DiffCD:
             insertion2 = insertion_point.insert(''.join(random.choices(character_set, k=random.randint(10,20)))+ext,self.options.req) # {randomstring}{ext}
             time.sleep(self.options.args.sleep/1000)
             resp2, response_time2,error2= self.options.req.send(debug=self.options.args.debug,insertions=[insertion2],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
-            if error:
-                self.options.logger.debug(f"Error occured while sending request: {error}")
+            if error2:
+                self.options.logger.debug(f"Error occured while sending request: {error2}")
+                error2 = str(type(error2)).encode()
 
             resp2 = Response(resp2)
             sections2 = list(self.baselines[key].find_diffs(resp2,response_time2,error2))
 
             if sections == sections2:
                 self.baselines[key].add_response(resp2,response_time2,error2)
-                if error:
-                    self.options.logger.debug(f"Error occured while sending request: {error}")
 
 
                 if self.calibrating.get(key) is True:
@@ -119,8 +120,9 @@ class DiffCD:
             insertion3 = insertion_point.insert(''.join(random.choices(character_set, k=random.randint(10,20)))+payload+ext,self.options.req) # {randomstring}{previouspayload}{ext}
             time.sleep(self.options.args.sleep/1000)
             resp3, response_time3,error3= self.options.req.send(debug=self.options.args.debug,insertions=[insertion3],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
-            if error:
-                self.options.logger.debug(f"Error occured while sending request: {error}")
+            if error3:
+                self.options.logger.debug(f"Error occured while sending request: {error3}")
+                error3 = str(type(error3)).encode()
 
 
             resp3 = Response(resp3)
@@ -134,8 +136,9 @@ class DiffCD:
             time.sleep(self.options.args.sleep/1000)
             resp4, response_time4,error4 = self.options.req.send(debug=self.options.args.debug,insertions=[insertion4],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
 
-            if error:
-                self.options.logger.debug(f"Error occured while sending request: {error}")
+            if error4:
+                self.options.logger.debug(f"Error occured while sending request: {error4}")
+                error4 = str(type(error4)).encode()
 
 
             resp4 = Response(resp4)

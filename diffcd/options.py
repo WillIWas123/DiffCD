@@ -115,7 +115,7 @@ class Options:
             type=int,
             help="Determines how long (ms) the scanner should sleep between each request while calibrating",
         )
-        scan_parser.add_argument("--timeout", type=int, default=8, help="Determines the timeout duration (s) for each request")
+        scan_parser.add_argument("--timeout", type=float, default=8.0, help="Determines the timeout duration (s) for each request")
         scan_parser.add_argument(
             "--ignore-errors",
             "-ie",
