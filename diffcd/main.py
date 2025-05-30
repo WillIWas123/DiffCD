@@ -154,7 +154,7 @@ class DiffCD:
                 if self.count > 100:
                     self.stop=True
                     # TODO: Do some more testing here to see if there are any other options than just stopping the scan
-                    self.options.logger.critical(f"All of the last 100 payloads gave a valid result, something is wrong, stopping the scan")
+                    self.options.logger.debug(f"Error occured while sending request: {error}")
                     self.job_lock.release()
                     return
                 sections_diffs_len = {}
