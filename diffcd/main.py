@@ -21,12 +21,18 @@ class DiffCD:
         self.calibration_lock = Lock()
         self.calibrating={}
 
+    def find_key(self, insertion_point,payload,ext):
+        directory=""
+        if "/" in payload:
+            directory = "/".join(payload.split("/")[:-1])
+        key = insertion_point + directory + ext
+        return key
 
     def calibrate_baseline(self,insertion_point,payload,ext):
         character_set = list(set(payload)) or string.ascii_lowercase+string.ascii_uppercase
         if self.stop is True:
             return None
-        key = str(insertion_point)+ext
+        key = self.find_key(str(insertion_point),payload,ext)
         baseline = self.baselines.get(key,Baseline())
         baseline.verbose = self.options.args.verbose
         baseline.analyze_all = not self.options.args.no_analyze_all
@@ -74,7 +80,7 @@ class DiffCD:
 
         resp = Response(resp)
 
-        key = str(insertion_point)+ext
+        key = self.find_key(str(insertion_point),payload,ext)
         if self.baselines.get(key) is None:
             self.calibration_lock.acquire()
             if self.baselines.get(key) is None:
