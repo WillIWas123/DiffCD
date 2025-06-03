@@ -28,6 +28,15 @@ class DiffCD:
         key = insertion_point + directory + ext
         return key
 
+    def send(self, insertion):
+        insertions = [insertion]
+        time.sleep(self.options.args.sleep/1000)
+        resp, response_time,error = self.options.req.send(debug=self.options.args.debug,insertions=insertions,allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
+        if error:
+            self.options.logger.debug(f"Error occured while sending request: {error}")
+            error = str(type(error)).encode()
+        return Response(resp),response_time,error
+
     def calibrate_baseline(self,insertion_point,payload,ext):
         character_set = list(set(payload)) or string.ascii_lowercase+string.ascii_uppercase
         if self.stop is True:
@@ -41,26 +50,18 @@ class DiffCD:
         for i in range(self.options.args.num_calibrations):
             random_value = ''.join(random.choices(character_set, k=random.randint(10,20)))
             insertion = insertion_point.insert(random_value+ext,self.options.req)
-            sleep_time = self.options.args.calibration_sleep/1000 or self.options.args.sleep/1000
+            sleep_time = max(0,self.options.args.calibration_sleep/1000 - self.options.args.sleep/1000)
             time.sleep(sleep_time)
-            resp, response_time,error = self.options.req.send(debug=self.options.args.debug,insertions=[insertion],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
+            resp, response_time,error = self.send(insertion)
             if error and self.options.args.ignore_errors is False:
                 self.stop=True
                 self.options.logger.critical(f"Error occured during calibration, stopping scan as ignore-errors is not set: {error}")
                 return
-            if error:
-                self.options.logger.debug(f"Error occured while sending request: {error}")
-                error = str(type(error)).encode()
-            resp = Response(resp)
             baseline.add_response(resp,response_time,error,payload=random_value)
 
         sleep_time = self.options.args.calibration_sleep/1000 or self.options.args.sleep/1000
         time.sleep(sleep_time)
-        resp, response_time,error = self.options.req.send(debug=self.options.args.debug,insertions=[insertion],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
-        if error:
-            self.options.logger.debug(f"Error occured while sending request: {error}")
-            error = str(type(error)).encode()
-        resp = Response(resp)
+        resp, response_time,error = self.send(insertion)
         baseline.add_response(resp,response_time,error,payload=random_value)
         self.options.logger.verbose(f"Done calibrating for key '{key}'")
         return baseline
@@ -73,13 +74,7 @@ class DiffCD:
         if self.stop is True:
             self.job_lock.release()
             return
-        resp, response_time,error = self.options.req.send(debug=self.options.args.debug,insertions=[insertion1],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
-        if error:
-            self.options.logger.debug(f"Error occured while sending request: {error}")
-            error = str(type(error)).encode()
-
-        resp = Response(resp)
-
+        resp, response_time,error = self.send(insertion1)
         key = self.find_key(str(insertion_point),payload,ext)
         if self.baselines.get(key) is None:
             self.calibration_lock.acquire()
@@ -96,12 +91,8 @@ class DiffCD:
         if len(sections) > 0:
             insertion2 = insertion_point.insert(''.join(random.choices(character_set, k=random.randint(10,20)))+ext,self.options.req) # {randomstring}{ext}
             time.sleep(self.options.args.sleep/1000)
-            resp2, response_time2,error2= self.options.req.send(debug=self.options.args.debug,insertions=[insertion2],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
-            if error2:
-                self.options.logger.debug(f"Error occured while sending request: {error2}")
-                error2 = str(type(error2)).encode()
+            resp2, response_time2,error2 = self.send(insertion2)
 
-            resp2 = Response(resp2)
             sections2 = list(self.baselines[key].find_diffs(resp2,response_time2,error2))
 
             if sections == sections2:
@@ -125,13 +116,8 @@ class DiffCD:
 
             insertion3 = insertion_point.insert(''.join(random.choices(character_set, k=random.randint(10,20)))+payload+ext,self.options.req) # {randomstring}{previouspayload}{ext}
             time.sleep(self.options.args.sleep/1000)
-            resp3, response_time3,error3= self.options.req.send(debug=self.options.args.debug,insertions=[insertion3],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
-            if error3:
-                self.options.logger.debug(f"Error occured while sending request: {error3}")
-                error3 = str(type(error3)).encode()
+            resp3, response_time3,error3 = self.send(insertion3)
 
-
-            resp3 = Response(resp3)
             sections3 = list(self.baselines[key].find_diffs(resp3,response_time3,error3))
             if sections == sections3:
                 self.job_lock.release()
@@ -140,14 +126,8 @@ class DiffCD:
 
             insertion4 = insertion_point.insert(payload+''.join(random.choices(character_set, k=random.randint(10,20)))+ext,self.options.req) # {previouspayload}{randomstring}{ext}
             time.sleep(self.options.args.sleep/1000)
-            resp4, response_time4,error4 = self.options.req.send(debug=self.options.args.debug,insertions=[insertion4],allow_redirects=self.options.args.allow_redirects,timeout=self.options.args.timeout,verify=self.options.args.verify,proxies=self.options.proxies)
+            resp4, response_time4,error4 = self.send(insertion4)
 
-            if error4:
-                self.options.logger.debug(f"Error occured while sending request: {error4}")
-                error4 = str(type(error4)).encode()
-
-
-            resp4 = Response(resp4)
             sections4 = list(self.baselines[key].find_diffs(resp4,response_time4,error4))
             if sections == sections4:
                 self.job_lock.release()
@@ -160,7 +140,7 @@ class DiffCD:
                 if self.count > 100:
                     self.stop=True
                     # TODO: Do some more testing here to see if there are any other options than just stopping the scan
-                    self.options.logger.debug(f"Error occured while sending request: {error}")
+                    self.options.logger.critical(f"All of the last 100 payloads gave a valid result, something is wrong, stopping the scan")
                     self.job_lock.release()
                     return
                 sections_diffs_len = {}
