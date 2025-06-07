@@ -33,10 +33,6 @@ class DiffCD:
             """
             ext="/"
 
-        if ext and not payload and ext.startswith("."):
-            # Don't need to calibrate a new baseline for all payloads that's only an extension (.env, .git etc.)
-            ext = ""
-
         key = insertion_point + directory + "/" + ext
         return key
 
@@ -189,9 +185,7 @@ class DiffCD:
                     ext=""
                 ext2=""
                 for word in wordlist:
-                    self.job_lock.acquire()
                     if self.stop is True:
-                        self.job_lock.release()
                         return
                     if not ext:
                         word,ext2 = self.separate_payload(word)
@@ -202,6 +196,7 @@ class DiffCD:
                         job = Thread(target=self.check_endpoint,args=(insertion_point,word,"/"+random_string))
                         jobs.append(job)
                         job.start()
+                    self.job_lock.acquire()
                     job = Thread(target=self.check_endpoint,args=(insertion_point,word,ext or ext2,))
                     jobs.append(job)
                     job.start()
