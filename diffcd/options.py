@@ -137,7 +137,6 @@ class Options:
         analyzer_parser.add_argument(
             "--num-verifications", type=int, default=6, help="Specify how many times an endpoint should be verified/re-tested"
         )
-        analyzer_parser.add_argument("--calibrate-all-baselines",default=False,action="store_true",help="Disable optimizations made to skip some calibrations")
 
         self.args = parser.parse_args()
         self.set_args()

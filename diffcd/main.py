@@ -33,7 +33,7 @@ class DiffCD:
             """
             ext="/"
 
-        if ext and not payload and ext.startswith(".") and self.options.args.calibrate_all_baselines is False:
+        if ext and not payload and ext.startswith("."):
             # Don't need to calibrate a new baseline for all payloads that's only an extension (.env, .git etc.)
             ext = ""
 
@@ -48,33 +48,6 @@ class DiffCD:
             self.options.logger.debug(f"Error occured while sending request: {error}")
             error = str(type(error)).encode()
         return Response(resp),response_time,error
-
-    def check_similar_baselines(self,insertion_point,payload,ext):
-        if self.options.args.calibrate_all_baselines is True:
-            return None
-        character_set = string.ascii_lowercase+string.ascii_uppercase
-        if self.stop is True:
-            return
-        key = self.find_key(str(insertion_point),payload,ext)
-        random_value = ''.join(random.choices(character_set, k=random.randint(10,20)))
-        insertion = insertion_point.insert(random_value+ext,self.options.req)
-        sleep_time = max(0,self.options.args.calibration_sleep/1000 - self.options.args.sleep/1000)
-        time.sleep(sleep_time)
-        resp, response_time,error = self.send(insertion)
-        if error and self.options.args.ignore_errors is False:
-            self.stop=True
-            self.options.logger.critical(f"Error occured during calibration, stopping scan as ignore-errors is not set: {error}")
-            return
-
-        for baseline_key, baseline in self.baselines.items():
-            diffs = baseline.find_diffs(resp,response_time,error)
-            for diff in diffs:
-                break
-            else:
-                # TODO: implement checks to see whether the baseline can be trusted. The baseline may have very few static strings to rely on in some cases
-                self.options.logger.verbose(f"{key} and {baseline_key} have the same baseline, skipping calibration")
-                return baseline # TODO: consider copying the object
-
 
     def calibrate_baseline(self,insertion_point,payload,ext):
         character_set = list(set(payload)) or string.ascii_lowercase+string.ascii_uppercase
@@ -118,7 +91,7 @@ class DiffCD:
         if self.baselines.get(key) is None:
             self.calibration_lock.acquire()
             if self.baselines.get(key) is None:
-                self.baselines[key] = self.check_similar_baselines(insertion_point,payload,ext) or self.calibrate_baseline(insertion_point,payload,ext)
+                self.baselines[key] = self.calibrate_baseline(insertion_point,payload,ext)
             self.calibration_lock.release()
             if self.stop is True:
                 self.job_lock.release()
