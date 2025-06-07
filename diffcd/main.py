@@ -70,6 +70,10 @@ class DiffCD:
         sleep_time = self.options.args.calibration_sleep/1000 or self.options.args.sleep/1000
         time.sleep(sleep_time)
         resp, response_time,error = self.send(insertion)
+        if error and self.options.args.ignore_errors is False:
+            self.stop=True
+            self.options.logger.critical(f"Error occured during calibration, stopping scan as ignore-errors is not set: {error}")
+            return
         baseline.add_response(resp,response_time,error,payload=random_value)
         self.options.logger.verbose(f"Done calibrating for key '{key}'")
         return baseline
