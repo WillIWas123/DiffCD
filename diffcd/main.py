@@ -25,7 +25,19 @@ class DiffCD:
         directory=""
         if "/" in payload:
             directory = "/".join(payload.split("/")[:-1])
-        key = insertion_point + directory + ext
+        if "/" in ext:
+            """
+            When there's a slash in the extension I'm guessing the fuzzing location is not at the end.
+            
+            In the case when url=https://example.com/FUZZ and ext=/gibberish, the key should be // and not /FUZZ/ 
+            """
+            ext="/"
+
+        if ext and not payload and ext.startswith("."):
+            # Don't need to calibrate a new baseline for all payloads that's only an extension (.env, .git etc.)
+            ext = ""
+
+        key = insertion_point + directory + "/" + ext
         return key
 
     def send(self, insertion):
@@ -134,7 +146,6 @@ class DiffCD:
                 self.count=0
                 return 
 
-            insertion5 = insertion_point.insert(payload,self.options.req)
             if checks >= self.options.args.num_verifications:
                 self.count+=1
                 if self.count > 100:
@@ -180,9 +191,17 @@ class DiffCD:
                 for word in wordlist:
                     self.job_lock.acquire()
                     if self.stop is True:
+                        self.job_lock.release()
                         return
                     if not ext:
                         word,ext2 = self.separate_payload(word)
+                    if ext == "/" or ext2 == "/":
+                        # Let's look for /FUZZ/gibberish as well as /FUZZ/!
+                        self.job_lock.acquire()
+                        random_string = ''.join(random.choices(string.ascii_lowercase+string.ascii_uppercase, k=random.randint(10,20)))
+                        job = Thread(target=self.check_endpoint,args=(insertion_point,word,"/"+random_string))
+                        jobs.append(job)
+                        job.start()
                     job = Thread(target=self.check_endpoint,args=(insertion_point,word,ext or ext2,))
                     jobs.append(job)
                     job.start()
@@ -197,9 +216,6 @@ def main():
     options = Options()
     diffcd = DiffCD(options)
     diffcd.scan()
-
-
-
 
 if __name__ == "__main__":
     main()
