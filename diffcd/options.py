@@ -89,6 +89,7 @@ class Options:
         request_parser.add_argument("--proxy", "-p")
         request_parser.add_argument("--https", "--tls", action="store_true", default=False)
         request_parser.add_argument("--verify", default=False, action="store_true", help="Verify SSL certificates")
+        request_parser.add_argument("--disable-encoding", default=False, action="store_true",help="Disable default encoding of payloads")
         request_parser.add_argument(
             "--allow-redirects", "-ar", default=False, action="store_true", help="Specify if requests should follow redirects"
         )

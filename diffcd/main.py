@@ -56,7 +56,7 @@ class DiffCD:
 
         for i in range(self.options.args.num_calibrations):
             random_value = ''.join(random.choices(character_set, k=random.randint(3,50)))
-            insertion = insertion_point.insert(random_value+ext,self.options.req)
+            insertion = insertion_point.insert(random_value+ext,self.options.req,default_encoding=not self.options.args.disable_encoding)
             sleep_time = max(0,self.options.args.calibration_sleep/1000 - self.options.args.sleep/1000)
             time.sleep(sleep_time)
             resp, response_time,error = self.send(insertion)
@@ -80,7 +80,7 @@ class DiffCD:
 
 
     def check_endpoint(self,insertion_point,payload,ext,checks=0,pd=False):
-        insertion1 = insertion_point.insert(payload+ext,self.options.req)
+        insertion1 = insertion_point.insert(payload+ext,self.options.req,default_encoding=not self.options.args.disable_encoding)
         time.sleep(self.options.args.sleep/1000)
         if self.stop is True:
             return
@@ -99,7 +99,7 @@ class DiffCD:
         character_set = list(set(payload)) or string.ascii_lowercase+string.ascii_uppercase
         if len(sections) > 0:
             random_value = ''.join(random.choices(character_set, k=random.randint(3,50)))
-            insertion2 = insertion_point.insert(random_value+ext,self.options.req) # {randomstring}{ext}
+            insertion2 = insertion_point.insert(random_value+ext,self.options.req,default_encoding=not self.options.args.disable_encoding) # {randomstring}{ext}
             time.sleep(self.options.args.sleep/1000)
             resp2, response_time2,error2 = self.send(insertion2)
 
@@ -123,7 +123,7 @@ class DiffCD:
                 self.count=0
                 return self.check_endpoint(insertion_point,payload,ext)
 
-            insertion3 = insertion_point.insert(''.join(random.choices(character_set, k=random.randint(3,50)))+payload+ext,self.options.req) # {randomstring}{previouspayload}{ext}
+            insertion3 = insertion_point.insert(''.join(random.choices(character_set, k=random.randint(3,50)))+payload+ext,self.options.req,default_encoding=not self.options.args.disable_encoding) # {randomstring}{previouspayload}{ext}
             time.sleep(self.options.args.sleep/1000)
             resp3, response_time3,error3 = self.send(insertion3)
 
@@ -132,7 +132,7 @@ class DiffCD:
                 self.count=0
                 return
 
-            insertion4 = insertion_point.insert(payload+''.join(random.choices(character_set, k=random.randint(3,50)))+ext,self.options.req) # {previouspayload}{randomstring}{ext}
+            insertion4 = insertion_point.insert(payload+''.join(random.choices(character_set, k=random.randint(3,50)))+ext,self.options.req,default_encoding=not self.options.args.disable_encoding) # {previouspayload}{randomstring}{ext}
             time.sleep(self.options.args.sleep/1000)
             resp4, response_time4,error4 = self.send(insertion4)
 
