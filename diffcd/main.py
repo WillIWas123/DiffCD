@@ -1,4 +1,5 @@
 from diffcd.options import Options
+from diffcd.output import Reporter, parse_headers
 from httpdiff import Baseline, Response
 
 from threading import Thread, BoundedSemaphore, Lock
@@ -22,6 +23,18 @@ class DiffCD:
         self.calibrating={}
         self.queue = queue.Queue()
 
+        # Counter of requests actually sent (for progress logging).
+        self.sent = 0
+        self.sent_lock = Lock()
+
+        # Reporter handles all finding output (stdout / file); logs stay on stderr.
+        self.reporter = Reporter(
+            fmt=self.options.args.output_format,
+            color=not self.options.args.no_color,
+            output=self.options.args.output,
+            logger=self.options.logger,
+        )
+
     def find_key(self, insertion_point,payload,ext,pd):
         directory=""
         if "/" in payload:
@@ -42,7 +55,63 @@ class DiffCD:
         if error:
             self.options.logger.debug(f"Error occured while sending request: {error}")
             error = str(type(error)).encode()
+
+        # Track progress and emit an occasional liveness line on stderr.
+        with self.sent_lock:
+            self.sent += 1
+            sent = self.sent
+        if sent % 1000 == 0:
+            self.options.logger.info(f"Progress: {sent} requests sent, {self.reporter.count} finding(s)")
+
         return Response(resp),response_time,error
+
+    def build_result(self, insertion, resp, response_time, error, sections):
+        """Assemble a rich, JSON-serializable record describing a confirmed hit."""
+        changes = {}
+        for s in sections:
+            changes[s["section"]] = changes.get(s["section"], 0) + len(s["diffs"])
+
+        url = insertion.full_section
+        if isinstance(url, bytes):
+            url = url.decode("latin-1", errors="replace")
+
+        result = {
+            "url": url,
+            "status_code": None,
+            "reason": None,
+            "content_length": None,
+            "response_time_ms": round(response_time, 1) if response_time is not None else None,
+            "location": None,
+            "redirected": False,
+            "redirect_status": None,
+            "changed_sections": [s["section"] for s in sections],
+            "changes": changes,
+            "error": None,
+        }
+
+        if error:
+            result["error"] = error.decode("latin-1", errors="replace") if isinstance(error, bytes) else str(error)
+
+        if resp is not None and not getattr(resp, "none", False):
+            result["status_code"] = resp.status_code
+            reason = resp.reason
+            result["reason"] = reason.decode("latin-1", errors="replace") if isinstance(reason, bytes) else reason
+            result["content_length"] = len(resp.content)
+
+            headers = parse_headers(resp.headers)
+            for k, v in headers.items():
+                if k.lower() == "location":
+                    result["location"] = v
+                    break
+
+            if getattr(resp, "history", None):
+                result["redirected"] = True
+                try:
+                    result["redirect_status"] = resp.history[0].status_code
+                except Exception:
+                    pass
+
+        return result
 
     def calibrate_baseline(self,insertion_point,payload,ext,pd):
         character_set = list(set(payload)) or string.ascii_lowercase+string.ascii_uppercase
@@ -148,12 +217,8 @@ class DiffCD:
                     # TODO: Do some more testing here to see if there are any other options than just stopping the scan
                     self.options.logger.critical(f"All of the last 100 payloads gave a valid result, something is wrong, stopping the scan")
                     return
-                sections_diffs_len = {}
-                for i in sections:
-                    if i["section"] not in sections_diffs_len.keys():
-                        sections_diffs_len[i["section"]] = 0
-                    sections_diffs_len[i["section"]]+=len(i["diffs"])
-                self.options.logger.info(f"{insertion1.full_section} - {sections_diffs_len}")
+                result = self.build_result(insertion1, resp, response_time, error, sections)
+                self.reporter.report(result)
             else:
                 return self.check_endpoint(insertion_point,payload,ext,checks=checks+1)
 
@@ -193,6 +258,11 @@ class DiffCD:
         with open(self.options.args.wordlist,"r") as f:
             wordlist = f.read().splitlines()
 
+        self.options.logger.info(
+            f"Starting scan: {len(wordlist)} words x {len(self.options.args.extensions)} extension(s), "
+            f"{self.options.args.threads} threads, output={self.options.args.output_format}"
+        )
+
         for insertion_point in self.options.insertion_points:
             for ext in self.options.args.extensions:
                 if ext.lower() == "none":
@@ -214,6 +284,9 @@ class DiffCD:
 
         for job in jobs:
             job.join()
+
+        self.reporter.summary()
+        self.reporter.close()
 
 
 def main():

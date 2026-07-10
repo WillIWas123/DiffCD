@@ -41,18 +41,24 @@ class Options:
         self.get_args()
         self.lock = BoundedSemaphore(self.args.threads)
 
-        # Setting up logger
+        # Setting up logger.
+        # IMPORTANT: all logging goes to *stderr* so that stdout carries only
+        # findings (paths / JSON). This lets users pipe results cleanly, e.g.
+        #   diffcd ... -of paths | httpx
+        #   diffcd ... -of json  > results.jsonl
         logging.addLevelName(VERBOSE_LEVEL, "VERBOSE")
         logging.Logger.verbose = verbose
 
         self.logger = logging.getLogger("DiffCDLogger")
         log_level = logging.INFO
-        if self.args.debug:
+        if self.args.quiet:
+            log_level = logging.ERROR
+        elif self.args.debug:
             log_level = logging.DEBUG
         elif self.args.verbose:
             log_level = VERBOSE_LEVEL
         self.logger.setLevel(log_level)
-        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler = logging.StreamHandler(sys.stderr)
         formatter = logging.Formatter('[%(levelname)s] %(message)s')
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)
@@ -96,9 +102,57 @@ class Options:
         # Waiting for urllib3 to release http 2 support
         # request_parser.add_argument("--version", default="HTTP/2")
 
+        output_parser = parser.add_argument_group("output")
+        output_parser.add_argument(
+            "--output-format",
+            "-of",
+            choices=["pretty", "json", "paths"],
+            default="pretty",
+            help=(
+                "How to print findings: 'pretty' (human readable, default), "
+                "'json' (one JSON object per line with full detail), "
+                "'paths' (just the URL of each finding, one per line)"
+            ),
+        )
+        output_parser.add_argument(
+            "--json",
+            "-j",
+            dest="output_format",
+            action="store_const",
+            const="json",
+            help="Shortcut for --output-format json",
+        )
+        output_parser.add_argument(
+            "--paths-only",
+            "-po",
+            dest="output_format",
+            action="store_const",
+            const="paths",
+            help="Shortcut for --output-format paths (minimal: just the paths)",
+        )
+        output_parser.add_argument(
+            "--output",
+            "-o",
+            default=None,
+            help="Write findings to a file instead of stdout (logs still go to stderr)",
+        )
+        output_parser.add_argument(
+            "--no-color",
+            action="store_true",
+            default=False,
+            help="Disable colored output (color is auto-disabled when piping)",
+        )
+
         verbosity_parser = parser.add_argument_group("verbosisty")
         verbosity_parser.add_argument("--verbose", "-v", action="store_true", default=False)
         verbosity_parser.add_argument("--debug", "-d", action="store_true", default=False)
+        verbosity_parser.add_argument(
+            "--quiet",
+            "-q",
+            action="store_true",
+            default=False,
+            help="Suppress calibration/progress logs on stderr (only errors + findings)",
+        )
 
         scan_parser = parser.add_argument_group("scan")
         scan_parser.add_argument(

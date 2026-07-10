@@ -27,10 +27,11 @@ DiffCD uses [HTTPDiff](https://github.com/WillIWas123/HTTPDiff) to determine the
 
 ```
 usage: diffcd [-h] --wordlist WORDLIST [--extensions EXTENSIONS [EXTENSIONS ...]] (--url URL | --request REQUEST)
-              [--method METHOD] [--header HEADER [HEADER ...]] [--body BODY] [--threads THREADS] [--proxy PROXY] [--https]
-              [--verify] [--allow-redirects] [--verbose] [--debug] [--sleep SLEEP] [--calibration-sleep CALIBRATION_SLEEP]
-              [--timeout TIMEOUT] [--ignore-errors] [--no-analyze-all] [--num-calibrations NUM_CALIBRATIONS]
-              [--num-verifications NUM_VERIFICATIONS]
+              [--method METHOD] [--header HEADER [HEADER ...]] [--body BODY] [--threads THREADS] [--proxy PROXY]
+              [--https] [--verify] [--disable-encoding] [--allow-redirects] [--output-format {pretty,json,paths}]
+              [--json] [--paths-only] [--output OUTPUT] [--no-color] [--verbose] [--debug] [--quiet] [--sleep SLEEP]
+              [--calibration-sleep CALIBRATION_SLEEP] [--timeout TIMEOUT] [--ignore-errors] [--no-analyze-all]
+              [--num-calibrations NUM_CALIBRATIONS] [--num-verifications NUM_VERIFICATIONS]
 
 A Content Discovery tool for finding more interesting/hidden content on web applications
 
@@ -53,12 +54,24 @@ request:
   --proxy PROXY, -p PROXY
   --https, --tls
   --verify              Verify SSL certificates
+  --disable-encoding    Disable default encoding of payloads
   --allow-redirects, -ar
                         Specify if requests should follow redirects
+
+output:
+  --output-format {pretty,json,paths}, -of {pretty,json,paths}
+                        How to print findings: 'pretty' (human readable, default), 'json' (one JSON object per line
+                        with full detail), 'paths' (just the URL of each finding, one per line)
+  --json, -j            Shortcut for --output-format json
+  --paths-only, -po     Shortcut for --output-format paths (minimal: just the paths)
+  --output OUTPUT, -o OUTPUT
+                        Write findings to a file instead of stdout (logs still go to stderr)
+  --no-color            Disable colored output (color is auto-disabled when piping)
 
 verbosisty:
   --verbose, -v
   --debug, -d
+  --quiet, -q           Suppress calibration/progress logs on stderr (only errors + findings)
 
 scan:
   --sleep SLEEP, -ss SLEEP, -s SLEEP
