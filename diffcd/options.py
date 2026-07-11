@@ -94,6 +94,7 @@ class Options:
         request_parser.add_argument("--threads", "-t", default=10, type=int)
         request_parser.add_argument("--proxy", "-p")
         request_parser.add_argument("--https", "--tls", action="store_true", default=False)
+        request_parser.add_argument("--sni", default=None, help="Override the TLS SNI value (may contain FUZZ to fuzz the SNI)")
         request_parser.add_argument("--verify", default=False, action="store_true", help="Verify SSL certificates")
         request_parser.add_argument("--disable-encoding", default=False, action="store_true",help="Disable default encoding of payloads")
         request_parser.add_argument(
@@ -227,6 +228,8 @@ class Options:
                 query = "?"+"?".join(self.args.url.split("?")[1:])
             url = f"{scheme}://{host}{path}{query}"
             self.req = manual_request(scheme,self.args.method, host,url,"HTTP/1.1",self.args.header,self.args.body.encode())
+        if self.args.sni is not None:
+            self.req.sni = self.args.sni
         insertion_points = find_insertion_points(self.req,location="Manual")
         insertion_points = insertion_points or [find_insertion_points(self.req,location="Path")[-1]]
 
