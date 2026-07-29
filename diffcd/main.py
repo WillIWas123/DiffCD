@@ -13,6 +13,10 @@ import requests
 import re
 
 
+# Stands in for the random segment of a platform-distinction probe in reported paths.
+PD_PLACEHOLDER = "[PLATFORM_DISTINCTION]"
+
+
 class DiffCD:
     def __init__(self, options):
         self.count=0
@@ -65,18 +69,30 @@ class DiffCD:
 
         return Response(resp),response_time,error
 
-    def build_result(self, insertion, resp, response_time, error, sections):
+    def build_result(self, insertion, resp, response_time, error, sections, pd=False, ext=""):
         """Assemble a rich, JSON-serializable record describing a confirmed hit."""
         changes = {}
         for s in sections:
             changes[s["section"]] = changes.get(s["section"], 0) + len(s["diffs"])
 
-        url = insertion.full_section
-        if isinstance(url, bytes):
-            url = url.decode("latin-1", errors="replace")
+        requested_url = insertion.full_section
+        if isinstance(requested_url, bytes):
+            requested_url = requested_url.decode("latin-1", errors="replace")
+
+        # A platform distinction is not a real path: the trailing segment is
+        # gibberish generated per job, so reporting it verbatim invites someone to
+        # go looking for a value that never existed. Show a placeholder instead and
+        # keep the concrete path under "requested_url" for later investigation.
+        url = requested_url
+        if pd and ext:
+            head, sep, tail = url.rpartition(ext)
+            if sep:
+                url = head + "/" + PD_PLACEHOLDER + tail
 
         result = {
             "url": url,
+            "requested_url": requested_url,
+            "platform_distinction": bool(pd),
             "status_code": None,
             "reason": None,
             "content_length": None,
@@ -220,7 +236,7 @@ class DiffCD:
                     # TODO: Do some more testing here to see if there are any other options than just stopping the scan
                     self.options.logger.critical(f"All of the last 100 payloads gave a valid result, something is wrong, stopping the scan")
                     return
-                result = self.build_result(insertion1, resp, response_time, error, sections)
+                result = self.build_result(insertion1, resp, response_time, error, sections, pd=pd, ext=ext)
                 self.reporter.report(result)
             else:
                 return self.check_endpoint(insertion_point,payload,ext,checks=checks+1,pd=pd,key=key)
