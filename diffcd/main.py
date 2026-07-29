@@ -113,11 +113,10 @@ class DiffCD:
 
         return result
 
-    def calibrate_baseline(self,insertion_point,payload,ext,pd):
+    def calibrate_baseline(self,insertion_point,payload,ext,key):
         character_set = list(set(payload)) or string.ascii_lowercase+string.ascii_uppercase
         if self.stop is True:
             return None
-        key = self.find_key(str(insertion_point),payload,ext,pd)
         baseline = self.baselines.get(key,Baseline())
         baseline.verbose = self.options.args.verbose
         baseline.analyze_all = not self.options.args.no_analyze_all
@@ -148,17 +147,21 @@ class DiffCD:
 
 
 
-    def check_endpoint(self,insertion_point,payload,ext,checks=0,pd=False):
+    def check_endpoint(self,insertion_point,payload,ext,checks=0,pd=False,key=None):
         insertion1 = insertion_point.insert(payload+ext,self.options.req,default_encoding=not self.options.args.disable_encoding)
         time.sleep(self.options.args.sleep/1000)
         if self.stop is True:
             return
         resp, response_time,error = self.send(insertion1)
-        key = self.find_key(str(insertion_point),payload,ext,pd)
+        if key is None:
+            # The key is derived once per job and passed on to every re-check below.
+            # Re-deriving it mid-job would let a PD job fall back onto the shared
+            # directory baseline and fight with it over calibration.
+            key = self.find_key(str(insertion_point),payload,ext,pd)
         if self.baselines.get(key) is None:
             self.calibration_lock.acquire()
             if self.baselines.get(key) is None:
-                self.baselines[key] = self.calibrate_baseline(insertion_point,payload,ext,pd)
+                self.baselines[key] = self.calibrate_baseline(insertion_point,payload,ext,key)
             self.calibration_lock.release()
             if self.stop is True:
                 return None
@@ -181,16 +184,16 @@ class DiffCD:
                 if self.calibrating.get(key) is True:
                     self.calibration_lock.acquire() # Wait for calibration to finish
                     self.calibration_lock.release()
-                    return self.check_endpoint(insertion_point,payload,ext) # checks is reset since we don't know whether the incorrect baseline affected the results
+                    return self.check_endpoint(insertion_point,payload,ext,pd=pd,key=key) # checks is reset since we don't know whether the incorrect baseline affected the results
                 self.calibration_lock.acquire()
                 self.calibrating[key] = True
-                self.calibrate_baseline(insertion_point,payload,ext,pd)
+                self.calibrate_baseline(insertion_point,payload,ext,key)
                 self.calibration_lock.release()
                 if self.stop is True:
                     return None
                 self.calibrating[key] = False
                 self.count=0
-                return self.check_endpoint(insertion_point,payload,ext)
+                return self.check_endpoint(insertion_point,payload,ext,pd=pd,key=key)
 
             insertion3 = insertion_point.insert(''.join(random.choices(character_set, k=random.randint(3,50)))+payload+ext,self.options.req,default_encoding=not self.options.args.disable_encoding) # {randomstring}{previouspayload}{ext}
             time.sleep(self.options.args.sleep/1000)
@@ -220,7 +223,7 @@ class DiffCD:
                 result = self.build_result(insertion1, resp, response_time, error, sections)
                 self.reporter.report(result)
             else:
-                return self.check_endpoint(insertion_point,payload,ext,checks=checks+1)
+                return self.check_endpoint(insertion_point,payload,ext,checks=checks+1,pd=pd,key=key)
 
 
     def separate_payload(self,word):
